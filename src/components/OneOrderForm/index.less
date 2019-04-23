@@ -1,0 +1,119 @@
+.row-div{
+  margin-bottom: 10px;
+}
+.form-part{
+  background-color: #fff;
+  padding: 20px ;
+  .active-title:before{
+    content: '';
+    display: block;
+    position: absolute;
+    width: 4px;
+    height: 18px;
+    background-color: #F6C23B;
+    left: 0;
+    top: 3px;
+    border-radius: 2px;
+    
+  }
+  .hide-title:before{
+    content: '';
+    display: block;
+    position: absolute;
+    width: 4px;
+    height: 18px;
+    background-color: #A5A9AE;
+    left: 0;
+    top: 3px;
+    border-radius: 2px;
+  }
+  .conmmon-title{
+    padding-right: 30px;
+    cursor: pointer;
+    position: relative;
+    padding-left: 12px !important;
+    font-weight: bolder;
+    font-size: 16px;
+  }
+  .active-title{
+  color: #333333;
+  }
+  .hide-title{
+    color: #A5A9AE;
+  }
+  .form-part-content{
+    background-color: #F7F8F9;
+    padding: 10px;
+    height: auto;
+  }
+}
+.common-form .ant-row.ant-form-item{
+  width:100%;
+  display: flex;
+  
+  /* margin-bottom: 15px; */
+}
+.common-form .ant-row{
+  margin-bottom: 4px;
+}
+.common-form .ant-form-item-control-wrapper{
+ flex-grow: 1;
+}
+.common-form .ant-form-item-label{
+  text-align: left !important;
+  min-width: 80px !important;
+}
+
+.common-form .ant-upload-list-item{
+  height: 45px;
+  line-height: 45px;
+  box-shadow:0px 2px 8px 0px rgba(184,190,196,0.26);  
+  border-radius:4px;
+}
+.common-form .ant-upload-list-item .anticon-paper-clip{
+  padding-left: 4px;
+  padding-top: 11px;
+}
+.common-form .ant-upload-list-item .anticon-close{
+  font-size: 16px !important;
+  padding-top: 11px;
+  padding-right: 4px;
+}
+.service-table .ant-table-body>table {
+  padding: 0 !important;
+}
+.service-table  .ant-table-content > .ant-table-body > table > .ant-table-thead > tr > th{
+  background-color: #E9ECEE;
+}
+.search-people-modal .ant-modal-footer{
+  display: none;
+}
+.ant-input-disabled{
+  background-color: #f5f5f5;
+  opacity: 1;
+  cursor: not-allowed;
+  color: rgba(0, 0, 0, 0.65);
+}
+.ant-select-disabled .ant-select-selection {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  color: rgba(0, 0, 0, 0.65) !important;
+}
+.has-error .ant-form-explain, .has-error .ant-form-split {
+  color: #f5222d;
+  position: relative;
+}
+.search-btn{
+  margin-top: 4px;
+  i{
+    transform: rotateY(180deg)
+  }
+}
+.form-container {
+  .ant-form-item-label label{
+    color: #757D87 !important;
+  }
+  .ant-input{
+    color: #323539 !important;
+  }
+}

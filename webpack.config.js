@@ -25,11 +25,22 @@ module.exports = {
                 loader: 'babel'
             },
             {   test: /\.css$/, 
-                loader: 'style-loader!css-loader?sourceMap' 
+                loader: 'style-loader!css-loader?{"sourceMap":true}',
             },
             {   
                 test: /\.scss$/, 
                 loader: "style!css!sass?sourceMap"
+            },
+            {
+                test: /\.less$/,
+                loader: 'style-loader!css-loader!less-loader?sourceMap', 
+                // use: [{
+                //      loader: "style-loader" // creates style nodes from JS strings
+                //  }, {
+                //      loader: "css-loader" // translates CSS into CommonJS
+                //  }, {
+                //      loader: "less-loader" // compiles Less to CSS
+                //  }]
             },
             { 
                 test: /\.(woff|svg|eot|ttf)\??.*$/,
@@ -53,7 +64,7 @@ module.exports = {
     ]
 }
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV === 'production') {
     module.exports.plugins = [
         new webpack.DefinePlugin({
             'process.env': {

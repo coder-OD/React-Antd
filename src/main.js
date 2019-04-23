@@ -29,6 +29,7 @@ import myChart from './components/chart.js'
 import myAnimate from './components/animate.js'
 import myCalendar from './components/calendar.js'
 import myCard from './components/fetch.js'
+import needOrder from './components/OneOrderForm/NeedOrder'
 
 const ACTIVE = { color: 'red' }
 
@@ -79,6 +80,7 @@ class Sider extends React.Component {
                         <SubMenu key="sub2" title={<span><Icon type="appstore" /><span>导航二</span></span>}>
                             <Menu.Item key="5"><Link to="/myCard">导航</Link></Menu.Item>
                             <Menu.Item key="6"><Link to="/myAnimate">关注</Link></Menu.Item>
+                            <Menu.Item key=""><Link to="/needOrder">需求单</Link></Menu.Item>
                         </SubMenu>
                     </Menu>
                 </div>
@@ -109,6 +111,7 @@ render((
             <Route path="myCalendar" component={myCalendar} />
             <Route path="myAnimate" component={myAnimate} />
             <Route path="myCard" component={myCard} />
+            <Route path="needOrder" component={needOrder} />
         </Route>
     </Router>
 ), document.getElementById('app'));
