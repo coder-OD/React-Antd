@@ -12,9 +12,12 @@ import {
   DatePicker,
   Checkbox,
   Radio,
-  Table
+  Table,
+  Modal,
+  InputNumber
 } from "antd";
 import _ from "lodash";
+import PropTypes from "prop-types";
 import "../index.less";
 import styles from "../index.module.css";
 
@@ -62,7 +65,7 @@ const REASON = "reason";
 const IS_SELF_SOLVE = "selfSolve";
 
 // 需求
-const CHANGE_TYPE = "changeType"
+const CHANGE_TYPE = "changeType";
 
 const needTypeList = [
   { value: TYPE1, text: "咨询" },
@@ -90,29 +93,33 @@ class NeedOrder extends React.Component {
       chargePersonList: [], // 部门主管
       operateTypeList: [], // 操作类型
       reasonList: [], // 原因
+      approveModal: false, // 控制审批弹窗
       levelList: [{ text: "一般", value: "1" }, { text: "紧急", value: "2" }], // 优先级
+      currentFlow: "", // 当前节点
+      nextFlow: "", // 下一节点
+      flowPos: "2", // 流程位置，在需求分类阶段
       rootList: [
         {
-          num:"1",
-          key:"1",
-          name:"姓名1",
-          status:"状态1",
-          department:"部门1",
-          root:"权限1",
-          rootDescription:"描述1",
-          reason:"原因1",
-          operate:"操作1"
+          num: "1",
+          key: "1",
+          name: "姓名1",
+          status: "状态1",
+          department: "部门1",
+          root: "权限1",
+          rootDescription: "描述1",
+          reason: "原因1",
+          phone: "操作1"
         },
         {
-          num:"2",
-          key:"2",
-          name:"姓名2",
-          status:"状态2",
-          department:"部门2",
-          root:"权限2",
-          rootDescription:"描述2",
-          reason:"原因2",
-          operate:"操作2"
+          num: "2",
+          key: "2",
+          name: "姓名2",
+          status: "状态2",
+          department: "部门2",
+          root: "权限2",
+          rootDescription: "描述2",
+          reason: "原因2",
+          phone: "操作2"
         }
       ],
       approverList: [], //审批人列表
@@ -124,38 +131,38 @@ class NeedOrder extends React.Component {
     };
     this.rootColumns = [
       {
-        title: '编号',
-        dataIndex: 'num',
+        title: "编号",
+        dataIndex: "num"
       },
       {
-        title: '姓名',
-        dataIndex: 'name',
+        title: "姓名",
+        dataIndex: "name"
       },
       {
-        title: '用户状态',
-        dataIndex: 'status',
+        title: "用户状态",
+        dataIndex: "status"
       },
       {
-        title: '所在部门/班组',
-        dataIndex: 'department',
+        title: "所在部门/班组",
+        dataIndex: "department"
       },
       {
-        title: '权限',
-        dataIndex: 'root',
+        title: "权限",
+        dataIndex: "root"
       },
       {
-        title: '权限描述',
-        dataIndex: 'rootDescription',
+        title: "权限描述",
+        dataIndex: "rootDescription"
       },
       {
-        title: '申请原因',
-        dataIndex: 'reason',
+        title: "申请原因",
+        dataIndex: "reason"
       },
       {
-        title: '权限操作',
-        dataIndex: 'operate',
-      },
-    ]
+        title: "联系电话",
+        dataIndex: "phone"
+      }
+    ];
     this.submitForm = _.throttle(this.submitForm, 2000);
   }
   /**
@@ -165,28 +172,62 @@ class NeedOrder extends React.Component {
   toggleTip = value => {
     this.setState({ activeTip: value });
   };
-
-  submitForm = e => {
+  /**
+   * 点击提交。根据需求类型以及流程位置分多种情况
+   * @param e 事件对象
+   * @param flowPos 流程位置
+   * @memberof NeedOrder
+   */
+  submitForm = (e, flowPos) => {
     e.persist();
     const { form } = this.props;
-    form.validateFieldsAndScroll((err, values) => {
-      const postObj = {
-        ...values,
-        [FINISH_TIME]: form.getFieldValue(FINISH_TIME)
-          ? values[FINISH_TIME].format("YYYY-MM-DD")
-          : ""
-      };
-      console.log(postObj);
-      if (!err) {
-        const postObj = {
-          ...values,
-          [FINISH_TIME]: form.getFieldValue(FINISH_TIME)
-            ? values[FINISH_TIME].format("YYYY-MM-DD")
-            : ""
-        };
-        console.log("Received values of form: ", values);
-      }
-    });
+    switch (flowPos) {
+      case "1":
+        // 首次提交表单
+        form.validateFieldsAndScroll((err, values) => {
+          const postObj = {
+            ...values,
+            [FINISH_TIME]: form.getFieldValue(FINISH_TIME)
+              ? values[FINISH_TIME].format("YYYY-MM-DD")
+              : ""
+          };
+          console.log(postObj);
+          if (!err) {
+            const postObj = {
+              ...values,
+              [FINISH_TIME]: form.getFieldValue(FINISH_TIME)
+                ? values[FINISH_TIME].format("YYYY-MM-DD")
+                : ""
+            };
+            console.log("Received values of form: ", values);
+          }
+        });
+        break;
+      case "2":
+        // 一线修正完表单内容，二次提交
+        this.setState({ approveModal: true });
+    }
+  };
+
+  /**
+   * 确定提交审核弹窗的函数
+   *
+   * @memberof NeedOrder
+   */
+  submitApprove = () => {
+    // console.log(this.submitModalForm)
+    if (this.submitModalForm.props) {
+      this.submitModalForm.props.form.validateFieldsAndScroll((err, values) => {
+        console.log(values);
+        if (!err) {
+          this.setState({ approveModal: false });
+        }
+      });
+    }
+  };
+
+  cancelApprove = () => {
+    this.setState({ approveModal: false });
   };
 
   /**
@@ -226,7 +267,9 @@ class NeedOrder extends React.Component {
    * @param value 选择的值
    * @memberof NeedOrder
    */
-  needTypeChange = value => {};
+  needTypeChange = value => {
+    this.getFlowMsg(value);
+  };
   /**
    * 需求子类型发生改变回调
    * @param value 选择的值
@@ -286,7 +329,28 @@ class NeedOrder extends React.Component {
     this.props.form.setFieldValue(type, date);
   };
 
-  componentDidMount() {}
+  /**
+   * 通过需求类型和流程位置获取流程信息
+   *
+   * @memberof NeedOrder
+   */
+  getFlowMsg = needType => {
+    const { flowPos } = this.state;
+    console.log(needType, flowPos);
+    switch (needType + "_" + flowPos) {
+      case TYPE2 + "_2":
+        this.setState({ currentFlow: "需求分类", nextFlow: "预处理" });
+        break;
+      default:
+        this.setState({ currentFlow: "***", nextFlow: "***" });
+        break;
+    }
+  };
+
+  componentDidMount() {
+    const needType = this.props.form.getFieldValue(NEED_TYPE);
+    this.getFlowMsg(needType);
+  }
 
   render() {
     const {
@@ -303,7 +367,10 @@ class NeedOrder extends React.Component {
       chargePersonList,
       rootList,
       operateTypeList,
-      reasonList
+      reasonList,
+      approveModal,
+      currentFlow,
+      nextFlow
     } = this.state;
     const {
       getFieldDecorator,
@@ -353,7 +420,7 @@ class NeedOrder extends React.Component {
               <Button
                 type="primary"
                 className="light-blue-btn"
-                onClick={this.submitForm}
+                onClick={e => this.submitForm(e, "2")}
                 style={{ marginRight: 0 }}
               >
                 提交
@@ -777,70 +844,71 @@ class NeedOrder extends React.Component {
                       </Row>
                     </div>
                   )}
-                  {needType === TYPE2 && <div>
-                    <Row gutter={16}>
-                    <Col span={12}>
-                      <FormItem label="操作类型">
-                        {getFieldDecorator(OPERATE_TYPE, {
-                          // initialValue: editData.declaratorMobile
-                          //   ? editData.declaratorMobile
-                          //   : "",
-                          validateTrigger: "onBlur",
-                          rules: [
-                            {
-                              required: true,
-                              message: "请选择操作类型"
-                            }
-                          ]
-                        })(
-                          <Select
-                            placeholder="请选择"
-                            // onChange={this.needModuleChange}
-                          >
-                            {operateTypeList.map(d => (
-                              <Option key={d.value}>{d.text}</Option>
-                            ))}
-                          </Select>
-                        )}
-                      </FormItem>
-                    </Col>
-                    <Col span={12}>
-                      <FormItem label="原因">
-                        {getFieldDecorator(REASON, {
-                          // initialValue: editData.declaratorMobile
-                          //   ? editData.declaratorMobile
-                          //   : "",
-                          validateTrigger: "onBlur",
-                          rules: [
-                            {
-                              required: true,
-                              message: "请选择原因"
-                            }
-                          ]
-                        })(
-                          <Select
-                            placeholder="请选择"
-                            // onChange={this.needSubModuleChange}
-                            style={{ width: "100%" }}
-                          >
-                            {reasonList.map(d => (
-                              <Option key={d.value}>{d.text}</Option>
-                            ))}
-                          </Select>
-                        )}
-                      </FormItem>
-                    </Col>
-                  </Row>
-                  <Row gutter={16}>
-                    <Col span={12}>
-                    <FormItem label={"可否自行处理"}>
+                  {needType === TYPE2 && (
+                    <div>
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <FormItem label="操作类型">
+                            {getFieldDecorator(OPERATE_TYPE, {
+                              // initialValue: editData.declaratorMobile
+                              //   ? editData.declaratorMobile
+                              //   : "",
+                              validateTrigger: "onBlur",
+                              rules: [
+                                {
+                                  required: true,
+                                  message: "请选择操作类型"
+                                }
+                              ]
+                            })(
+                              <Select
+                                placeholder="请选择"
+                                // onChange={this.needModuleChange}
+                              >
+                                {operateTypeList.map(d => (
+                                  <Option key={d.value}>{d.text}</Option>
+                                ))}
+                              </Select>
+                            )}
+                          </FormItem>
+                        </Col>
+                        <Col span={12}>
+                          <FormItem label="原因">
+                            {getFieldDecorator(REASON, {
+                              // initialValue: editData.declaratorMobile
+                              //   ? editData.declaratorMobile
+                              //   : "",
+                              validateTrigger: "onBlur",
+                              rules: [
+                                {
+                                  required: true,
+                                  message: "请选择原因"
+                                }
+                              ]
+                            })(
+                              <Select
+                                placeholder="请选择"
+                                // onChange={this.needSubModuleChange}
+                                style={{ width: "100%" }}
+                              >
+                                {reasonList.map(d => (
+                                  <Option key={d.value}>{d.text}</Option>
+                                ))}
+                              </Select>
+                            )}
+                          </FormItem>
+                        </Col>
+                      </Row>
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <FormItem label={"可否自行处理"}>
                             {getFieldDecorator(IS_SELF_SOLVE, {
                               initialValue: "1",
                               //   ? editData.declaratorMobile
                               //   : "",
                               rules: [
                                 {
-                                  required: false,
+                                  required: false
                                 }
                               ]
                             })(
@@ -850,13 +918,15 @@ class NeedOrder extends React.Component {
                               </Radio.Group>
                             )}
                           </FormItem>
-                    </Col>
-                  </Row>
-                  </div>}
-                  {needType === TYPE5 && <div>
-                    <Row gutter={16}>
-                    <Col span={12}>
-                    <FormItem label={"变更类型"}>
+                        </Col>
+                      </Row>
+                    </div>
+                  )}
+                  {needType === TYPE5 && (
+                    <div>
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <FormItem label={"变更类型"}>
                             {getFieldDecorator(CHANGE_TYPE, {
                               initialValue: "1",
                               //   ? editData.declaratorMobile
@@ -875,9 +945,10 @@ class NeedOrder extends React.Component {
                               </Radio.Group>
                             )}
                           </FormItem>
-                    </Col>
-                  </Row>
-                  </div>}
+                        </Col>
+                      </Row>
+                    </div>
+                  )}
                   <FormItem
                     label={
                       getFieldValue(NEED_TYPE) === TYPE1
@@ -941,7 +1012,7 @@ class NeedOrder extends React.Component {
                           rules: [
                             {
                               required: true,
-                              message: "请选泽审批人"
+                              message: "请选择审批人"
                             }
                           ]
                         })(
@@ -973,7 +1044,8 @@ class NeedOrder extends React.Component {
                     <Col span={7}>
                       <FormItem>
                         {getFieldDecorator(IS_COMPANY_ALL, {
-                          initialValue: false
+                          valuePropName: "checked",
+                          initialValue: true
                           //   ? editData.declaratorMobile
                           //   : "",
                         })(
@@ -984,21 +1056,26 @@ class NeedOrder extends React.Component {
                       </FormItem>
                     </Col>
                   </Row>
-                  {needType === TYPE3 && <div>
-                    <Row gutter={16}>
-                    <Col span={24}>
-                      <Button type="primary">增加权限</Button>
-                    </Col>
-                  </Row>
-                  <Row gutter={16}>
-                    <Col span={24}>
-                      <Table
-                        columns={this.rootColumns} dataSource={rootList} size="small" pagination={false} rowClassName={"table-row"}
-                      />
-                    </Col>
-                  </Row>
-                  </div>}
-                  
+                  {needType === TYPE3 && (
+                    <div>
+                      <Row gutter={16}>
+                        <Col span={24}>
+                          <Button type="primary">增加权限</Button>
+                        </Col>
+                      </Row>
+                      <Row gutter={16}>
+                        <Col span={24}>
+                          <Table
+                            columns={this.rootColumns}
+                            dataSource={rootList}
+                            size="small"
+                            pagination={false}
+                            rowClassName={"table-row"}
+                          />
+                        </Col>
+                      </Row>
+                    </div>
+                  )}
                 </div>
                 <div
                   style={{ display: activeTip === "file" ? "block" : "none" }}
@@ -1010,10 +1087,350 @@ class NeedOrder extends React.Component {
             </Form>
           </div>
         </div>
+        {/* 审批弹窗内容 */}
+        <Modal
+          width={800}
+          title={
+            <div>
+              <span>提交</span>
+              <span style={{ fontSize: 12, color: "#7f8e98" }}>
+                （提示：当前节点为《{currentFlow}》
+                {<span>，下一步节点为《{nextFlow}》</span>}）
+              </span>
+            </div>
+          }
+          cancelText="取消"
+          okText="确定"
+          destroyOnClose={true}
+          onOk={this.submitApprove}
+          onCancel={this.cancelApprove}
+          visible={approveModal}
+        >
+          <SubmitModalForm
+            needType={getFieldValue(NEED_TYPE)}
+            flowPos={"2"}
+            approverList={approverList}
+            wrappedComponentRef={form => (this.submitModalForm = form)}
+          />
+        </Modal>
       </div>
     );
   }
 }
 
+// 弹窗字段
+const HANDLER = "handler"; // 处理人
+const SUBMIT_MOBILE_PHONE = "submitMobilePhone"; // 手机号码
+const SUBMIT_TELEPHONE = "submitTelephone"; // 固定电话
+const SUBMIT_DEPARTMENT = "submitDepartment"; // 用户部门
+const SUBMIT_FLOW = "submitFlow"; // 流程转向
+const SUBMIT_APPROVER = "submitApprover"; // 审批人
+const IS_SUBMIT_ALL = "isSubmitAll"; // 全选
+const IS_SUBMIT_COMPANY_ALL = "isSubmitCompanyAll"; //企信全选
+const SUBMIT_SUGESTION = "submitSugestion"; //处理意见
+const BUSINESS_MANAGER = "bussinessManager"; //业务经理
+const THIRD_LINE = "thirdLine"; //三线人员
+const FINISH_DAYS = "finishDays"; //处理意见
+
+
+class SubmitModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      businessManagerList: [], // 业务经理
+      thirdLineList: [], // 三线人员
+      styles: {
+        "modal-item": "modal-item",
+        "modal-item-title": "modal-item-title"
+      }
+    };
+  }
+
+  componentDidMount() {}
+
+  render() {
+    const { styles, businessManagerList, thirdLineList } = this.state;
+    const {
+      getFieldDecorator,
+      getFieldsError,
+      getFieldError,
+      isFieldTouched,
+      getFieldValue
+    } = this.props.form;
+    return (
+      <Form ref="mutipleForm" className={`common-form`} layout="inline">
+        <div className={`${styles["modal-item"]}`} style={{marginBottom:30}}>
+          <Row>
+            <Col
+              offset={10}
+              span={4}
+              className={`${styles["modal-item-title"]}`}
+            >
+              当前处理人信息
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={6}>
+              <FormItem label="处理人">
+                {getFieldDecorator(HANDLER, {
+                  initialValue: "",
+                  rules: [
+                    {
+                      required: true,
+                      message: "请输入处理人"
+                    }
+                  ]
+                })(<Input />)}
+              </FormItem>
+            </Col>
+            <Col span={9}>
+              <FormItem
+                // {...shortItemLayout}
+                label="手机号码"
+                // style={inputStyle}
+                style={{ display: "inline-block" }}
+              >
+                {getFieldDecorator(SUBMIT_MOBILE_PHONE, {
+                  // initialValue: editData
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                  validateTrigger: "onBlur",
+                  rules: [
+                    {
+                      required: true,
+                      message: "请输入正确手机号码",
+                      // type:'number'，
+                      pattern: /^1[34578]\d{9}$/
+                    }
+                  ]
+                })(<Input placeholder="手机号码" />)}
+              </FormItem>
+            </Col>
+            <Col span={9}>
+              <FormItem
+                // {...shortItemLayout}
+                label="固定电话"
+                // style={inputStyle}
+                style={{ display: "inline-block" }}
+              >
+                {getFieldDecorator(SUBMIT_TELEPHONE, {
+                  // initialValue: editData
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                  validateTrigger: "onBlur",
+                  rules: [
+                    {
+                      required: true,
+                      message: "请输入正确固定电话",
+                      pattern: /^[0-9\-]*$/
+                    }
+                  ]
+                })(<Input placeholder="固定电话" />)}
+              </FormItem>
+            </Col>
+          </Row>
+          <Row gutter={16} style={{ paddingRight: 16 }}>
+            <Col span={24}>
+              <FormItem
+                // {...shortItemLayout}
+                label="用户部门"
+              >
+                {getFieldDecorator(SUBMIT_DEPARTMENT, {
+                  initialValue: "editData",
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                  validateTrigger: "onBlur",
+                  rules: [
+                    {
+                      required: true
+                    }
+                  ]
+                })(<Input disabled />)}
+              </FormItem>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <FormItem label="流程转向">
+                {getFieldDecorator(SUBMIT_FLOW, {
+                  // initialValue: editData.declaratorMobile
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                  validateTrigger: "onBlur",
+                  rules: [
+                    {
+                      required: true,
+                      message: "请选择流程转向"
+                    }
+                  ]
+                })(
+                  <Select placeholder="请选择">
+                    {this.props.approverList.map(d => (
+                      <Option key={d.value}>{d.text}</Option>
+                    ))}
+                  </Select>
+                )}
+              </FormItem>
+            </Col>
+            <Col span={8}>
+              <FormItem label="指定审批人">
+                {getFieldDecorator(SUBMIT_APPROVER, {
+                  // initialValue: editData.declaratorMobile
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                  validateTrigger: "onBlur",
+                  rules: [
+                    {
+                      required: true,
+                      message: "请选择审批人"
+                    }
+                  ]
+                })(
+                  <Select
+                    placeholder="请选择"
+                    // onChange={this.needSubModuleChange}
+                    style={{ width: "100%" }}
+                  >
+                    {this.props.approverList.map(d => (
+                      <Option key={d.value}>{d.text}</Option>
+                    ))}
+                  </Select>
+                )}
+              </FormItem>
+            </Col>
+            <Col span={3}>
+              <FormItem>
+                {getFieldDecorator(IS_SUBMIT_ALL, {
+                  initialValue: false
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                })(<Checkbox onChange={this.allSelectChange}>全选</Checkbox>)}
+              </FormItem>
+            </Col>
+            <Col span={5}>
+              <FormItem>
+                {getFieldDecorator(IS_SUBMIT_COMPANY_ALL, {
+                  valuePropName: "checked",
+                  initialValue: true
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                })(
+                  <Checkbox onChange={this.companySelectChange}>
+                    企信推送全选
+                  </Checkbox>
+                )}
+              </FormItem>
+            </Col>
+          </Row>
+          <Row style={{ paddingRight: 16 }}>
+            <Col span={24}>
+              <FormItem label={"处理意见"}>
+                {getFieldDecorator(SUBMIT_SUGESTION, {
+                  // initialValue: ,
+                  rules: [
+                    {
+                      required: true,
+                      message: "请填写处理意见"
+                    }
+                  ]
+                })(<TextArea autosize={{ minRows: 3, maxRow: 6 }} />)}
+              </FormItem>
+            </Col>
+          </Row>
+        </div>
+        <div className={`${styles["modal-item"]}`}>
+          <Row>
+            <Col
+              offset={11}
+              span={2}
+              className={`${styles["modal-item-title"]}`}
+            >
+              预处理
+            </Col>
+          </Row>
+          <Row>
+            <Col span={24}>
+              <FormItem label="预选业务经理">
+                {getFieldDecorator(BUSINESS_MANAGER, {
+                  // initialValue: editData.declaratorMobile
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                  validateTrigger: "onBlur",
+                  rules: [
+                    {
+                      required: true,
+                      message: "请选择业务经理"
+                    }
+                  ]
+                })(
+                  <Select
+                    placeholder="请选择"
+                    // onChange={this.needSubTypeChange}
+                  >
+                    {businessManagerList.map(d => (
+                      <Option value={d.value} key={d.value}>
+                        {d.text}
+                      </Option>
+                    ))}
+                  </Select>
+                )}
+              </FormItem>
+            </Col>
+          </Row>
+          <Row>
+            <Col span={24}>
+              <FormItem label="预选三线人员">
+                {getFieldDecorator(THIRD_LINE, {
+                  // initialValue: editData.declaratorMobile
+                  //   ? editData.declaratorMobile
+                  //   : "",
+                  validateTrigger: "onBlur",
+                  rules: [
+                    {
+                      required: true,
+                      message: "请选择三线人员"
+                    }
+                  ]
+                })(
+                  <Select
+                    placeholder="请选择"
+                    // onChange={this.needSubTypeChange}
+                  >
+                    {thirdLineList.map(d => (
+                      <Option value={d.value} key={d.value}>
+                        {d.text}
+                      </Option>
+                    ))}
+                  </Select>
+                )}
+              </FormItem>
+            </Col>
+          </Row>
+          <Row>
+          <Col span={8}>
+              <FormItem label="计划完成天数">
+                {getFieldDecorator(FINISH_DAYS, {
+                  initialValue: 1,
+                  rules: [
+                    {
+                      required: true,
+                      message: "请输入计划完成天数"
+                    }
+                  ]
+                })( <InputNumber />)}
+              </FormItem>
+            </Col>
+          </Row>
+        </div>
+      </Form>
+    );
+  }
+}
+const SubmitModalForm = Form.create({ name: "SubmitModal" })(SubmitModal);
+SubmitModalForm.propTypes = {
+  needType: PropTypes.string.isRequired, // 需求类型
+  flowPos: PropTypes.string.isRequired, // 流程的位置
+  approverList: PropTypes.array.isRequired // 审批人
+};
 const NeedOrderForm = Form.create({ name: "need_upload" })(NeedOrder);
 export default NeedOrderForm;

@@ -98,3 +98,18 @@
     padding-right: 20px;
   }
  }
+
+ .modal-item{
+   background-color: #f7f8f9;
+   padding: 10px;
+   position: relative;
+ }
+ .modal-item-title{
+   background-color: #7f8e98;
+   color: #fff;
+   border-radius: 10px;
+   height: 20px;
+   line-height: 20px;
+   text-align: center;
+   top:-20px;
+ }
